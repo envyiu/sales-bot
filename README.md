@@ -42,6 +42,14 @@ The seed command is idempotent and can be run again without duplicating products
 - Health: http://localhost:8000/health
 - DB Health: http://localhost:8000/health/db
 
+## Storefront
+
+The Next.js storefront fetches the catalog from FastAPI on the server using `BACKEND_API_URL`. The Docker-only hostname is never exposed as a browser-side public environment variable.
+
+- `GET /` — storefront home and catalog CTA.
+- `GET /products` — searchable, filterable, sortable catalog with pagination.
+- `GET /products/{slug}` — product detail with specifications and stock.
+
 ## Catalog API
 
 - `GET /api/products` — list active products with pagination, filters, search, and sorting.
