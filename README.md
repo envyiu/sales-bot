@@ -21,7 +21,7 @@ cp .env.example .env
 docker compose up --build
 ```
 
-The database uses the `pgvector/pgvector:pg16` image and stores data in the named `postgres_data` volume.
+The database uses the `pgvector/pgvector:pg16` image and stores data in the named `postgres_data` volume. Set `GOOGLE_API_KEY` in `.env` before using the chat endpoint; the key is consumed by the backend only.
 
 ## Database setup
 
@@ -62,6 +62,18 @@ curl 'http://localhost:8000/api/products?brand=Samsung&brand=Apple&limit=5'
 curl 'http://localhost:8000/api/products?q=galaxy&sort=price_asc'
 curl 'http://localhost:8000/api/products/samsung-galaxy-a56-5g'
 ```
+
+## Chat API
+
+`POST /api/chat` sends a message through LangChain and the configured Gemini model. A missing `conversation_id` starts a conversation; reuse the returned ID for follow-up messages.
+
+```bash
+curl -X POST http://localhost:8000/api/chat \
+  -H 'Content-Type: application/json' \
+  -d '{"message":"Tôi cần tư vấn điện thoại cho việc chụp ảnh."}'
+```
+
+Chat history is stored in `conversations` and `messages`. LangChain message payloads are stored as JSONB so later tool-calling work can rehydrate provider metadata. Catalog tools and streaming are not enabled yet.
 
 ## Database migrations
 
