@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 from langchain_core.tools import tool
 
 
@@ -18,6 +18,16 @@ class SearchProductsInput(BaseModel):
     min_storage: int | None = Field(default=None, ge=0)
     priorities: ProductPriorities | None = None
     limit: int = Field(default=3, ge=1, le=5)
+
+    @model_validator(mode="after")
+    def validate_price_range(self) -> "SearchProductsInput":
+        if (
+            self.min_price is not None
+            and self.max_price is not None
+            and self.min_price > self.max_price
+        ):
+            raise ValueError("min_price must be less than or equal to max_price")
+        return self
 
 
 @tool(args_schema=SearchProductsInput)

@@ -29,8 +29,10 @@ class ChatProduct(BaseModel):
     chipset: str
     battery_mah: int
     gaming_score: float
+    camera_score: float
     battery_score: float
     performance_score: float
+    display_score: float
     stock_quantity: int
     ranking_score: float | None
 

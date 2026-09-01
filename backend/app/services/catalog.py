@@ -131,8 +131,10 @@ def advisor_candidate_to_dict(candidate: AdvisorProductCandidate) -> dict[str, o
         "chipset": spec.chipset,
         "battery_mah": spec.battery_mah,
         "gaming_score": float(spec.gaming_score),
+        "camera_score": float(spec.camera_score),
         "battery_score": float(spec.battery_score),
         "performance_score": float(spec.performance_score),
+        "display_score": float(spec.display_score),
         "stock_quantity": candidate.inventory.quantity,
         "ranking_score": (
             float(candidate.ranking_score)

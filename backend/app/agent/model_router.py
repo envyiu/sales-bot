@@ -102,7 +102,7 @@ class RollingWindowRateLimiter:
         async with self._lock:
             now = self._clock()
             self._prune(now)
-            if not self._timestamps:
+            if len(self._timestamps) < self.rpm:
                 return 0
             return max(
                 1,
@@ -309,9 +309,12 @@ class ModelRouter:
             )
             return ModelInvocationResult(message=response, model_id=spec.model_id)
 
-        retry_after = max(
-            [await state.retry_after() for state in self._states.values()] or [1]
-        )
+        waits = [
+            wait
+            for wait in [await state.retry_after() for state in self._states.values()]
+            if wait > 0
+        ]
+        retry_after = min(waits or [1])
         raise AllModelsRateLimitedError(retry_after)
 
 
