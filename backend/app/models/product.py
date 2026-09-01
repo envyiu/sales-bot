@@ -32,7 +32,6 @@ class Product(Base):
             name="ck_products_release_year_reasonable",
         ),
         UniqueConstraint("slug", name="uq_products_slug"),
-        Index("ix_products_slug", "slug"),
         Index("ix_products_brand", "brand"),
         Index("ix_products_is_active", "is_active"),
     )

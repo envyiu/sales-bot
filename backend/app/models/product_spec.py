@@ -57,7 +57,7 @@ class ProductSpec(Base):
     chipset: Mapped[str] = mapped_column(String(255), nullable=False)
     ram_gb: Mapped[int] = mapped_column(SmallInteger, nullable=False)
     storage_gb: Mapped[int] = mapped_column(Integer, nullable=False)
-    screen_size_inches: Mapped[Decimal] = mapped_column(Numeric(4, 1), nullable=False)
+    screen_size_inches: Mapped[Decimal] = mapped_column(Numeric(4, 2), nullable=False)
     screen_type: Mapped[str] = mapped_column(String(100), nullable=False)
     refresh_rate_hz: Mapped[int] = mapped_column(SmallInteger, nullable=False)
     battery_mah: Mapped[int] = mapped_column(Integer, nullable=False)

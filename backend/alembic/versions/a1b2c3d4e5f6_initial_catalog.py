@@ -52,7 +52,6 @@ def upgrade() -> None:
         sa.PrimaryKeyConstraint("id"),
         sa.UniqueConstraint("slug", name="uq_products_slug"),
     )
-    op.create_index("ix_products_slug", "products", ["slug"], unique=False)
     op.create_index("ix_products_brand", "products", ["brand"], unique=False)
     op.create_index("ix_products_is_active", "products", ["is_active"], unique=False)
 
@@ -62,7 +61,7 @@ def upgrade() -> None:
         sa.Column("chipset", sa.String(length=255), nullable=False),
         sa.Column("ram_gb", sa.SmallInteger(), nullable=False),
         sa.Column("storage_gb", sa.Integer(), nullable=False),
-        sa.Column("screen_size_inches", sa.Numeric(precision=4, scale=1), nullable=False),
+        sa.Column("screen_size_inches", sa.Numeric(precision=4, scale=2), nullable=False),
         sa.Column("screen_type", sa.String(length=100), nullable=False),
         sa.Column("refresh_rate_hz", sa.SmallInteger(), nullable=False),
         sa.Column("battery_mah", sa.Integer(), nullable=False),
@@ -145,6 +144,5 @@ def downgrade() -> None:
     op.drop_table("product_specs")
     op.drop_index("ix_products_is_active", table_name="products")
     op.drop_index("ix_products_brand", table_name="products")
-    op.drop_index("ix_products_slug", table_name="products")
     op.drop_table("products")
     op.execute("DROP EXTENSION IF EXISTS vector")
