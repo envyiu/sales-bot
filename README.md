@@ -34,6 +34,8 @@ gemma-4-26b-a4b-it (30 RPM)
 
 The limiter and provider cooldown state are in memory for the single Docker backend process. If the backend is later scaled across workers or containers, move that state to shared storage such as Redis.
 
+For tool-call turns, the router reads `AIMessage.response_metadata["model_name"]` and keeps the complete tool protocol within one model family. Gemini tool histories use only the two Gemini models; Gemma tool histories can use the two Gemma models because cross-Gemma history was verified with the current provider integration. This prevents the known Gemini-tool-history to Gemma `400 INVALID_ARGUMENT` response.
+
 ## Database setup
 
 Alembic manages the catalog schema. The initial migration enables the PostgreSQL `vector` extension and creates the `products`, `product_specs`, and `inventory` tables. The seed script inserts a small demo catalog.

@@ -61,7 +61,49 @@ class AllModelsRateLimitedError(ModelRouterError):
 
     def __init__(self, retry_after: int) -> None:
         self.retry_after = max(1, retry_after)
-        super().__init__("All configured Gemini models are rate-limited")
+        super().__init__("All eligible models are currently rate-limited")
+
+
+def _model_family(model_name: object) -> str | None:
+    if not isinstance(model_name, str):
+        return None
+    normalized = model_name.rsplit("/", 1)[-1].lower()
+    if normalized.startswith("gemini-"):
+        return "gemini"
+    if normalized.startswith("gemma-"):
+        return "gemma"
+    return None
+
+
+def _has_tool_protocol(messages: Sequence[BaseMessage]) -> bool:
+    return any(
+        isinstance(message, AIMessage) and bool(message.tool_calls)
+        for message in messages
+    )
+
+
+def tool_history_family(messages: Sequence[BaseMessage]) -> str | None:
+    """Return the provider family recorded on AI tool-call messages.
+
+    ``None`` means no AI tool-call protocol is present. If a tool-call message
+    has no recognized ``response_metadata['model_name']``, ``None`` is also
+    returned; callers separately use ``_has_tool_protocol`` to fail closed.
+    """
+
+    families: set[str] = set()
+    for message in messages:
+        if not isinstance(message, AIMessage) or not message.tool_calls:
+            continue
+        metadata = message.response_metadata
+        model_name = metadata.get("model_name") if isinstance(metadata, dict) else None
+        family = _model_family(model_name)
+        if family is None:
+            return None
+        families.add(family)
+
+    if len(families) == 1:
+        return next(iter(families))
+    return None
 
 
 class RollingWindowRateLimiter:
@@ -178,6 +220,36 @@ class ModelRouter:
         return self._client_factory(model_id).bind_tools(tools)
 
     @staticmethod
+    def _spec_family(spec: ModelSpec) -> str | None:
+        return _model_family(spec.model_id)
+
+    async def _eligible_specs(
+        self,
+        messages: Sequence[BaseMessage],
+        conversation_id: UUID | None,
+    ) -> tuple[ModelSpec, ...]:
+        if not _has_tool_protocol(messages):
+            return self.specs
+
+        family = tool_history_family(messages)
+        if family is None:
+            raise ModelInvocationError(
+                "Tool history model family could not be identified"
+            )
+
+        eligible = tuple(
+            spec for spec in self.specs if self._spec_family(spec) == family
+        )
+        for spec in self.specs:
+            if spec not in eligible:
+                await self._log_skip(
+                    spec,
+                    "incompatible_tool_history",
+                    conversation_id,
+                )
+        return eligible
+
+    @staticmethod
     def _status_code(exc: Exception) -> int | None:
         for attribute in ("status_code", "code", "status"):
             value = getattr(exc, attribute, None)
@@ -258,7 +330,8 @@ class ModelRouter:
         conversation_id: UUID | None = None,
         tools: Sequence[Any] | None = None,
     ) -> ModelInvocationResult:
-        for index, spec in enumerate(self.specs):
+        eligible_specs = await self._eligible_specs(messages, conversation_id)
+        for index, spec in enumerate(eligible_specs):
             state = self._states[spec.model_id]
             reservation = await state.reserve()
             if reservation != "allowed":
@@ -275,7 +348,7 @@ class ModelRouter:
                 if classification == "rate_limit":
                     cooldown = self._retry_after_from(exc) or self._cooldown_seconds
                     await state.mark_cooldown(cooldown)
-                    if index + 1 < len(self.specs):
+                    if index + 1 < len(eligible_specs):
                         logger.warning(
                             "llm_fallback",
                             extra={
@@ -284,7 +357,7 @@ class ModelRouter:
                                     str(conversation_id) if conversation_id else None
                                 ),
                                 "from_model": spec.model_id,
-                                "to_model": self.specs[index + 1].model_id,
+                                "to_model": eligible_specs[index + 1].model_id,
                                 "reason": "rate_limit",
                             },
                         )
@@ -311,7 +384,10 @@ class ModelRouter:
 
         waits = [
             wait
-            for wait in [await state.retry_after() for state in self._states.values()]
+            for wait in [
+                await self._states[spec.model_id].retry_after()
+                for spec in eligible_specs
+            ]
             if wait > 0
         ]
         retry_after = min(waits or [1])

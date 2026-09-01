@@ -1,16 +1,24 @@
 import unittest
 
-from langchain_core.messages import AIMessage, HumanMessage
+from langchain_core.messages import (
+    AIMessage,
+    HumanMessage,
+    ToolMessage,
+    message_to_dict,
+    messages_from_dict,
+)
 from pydantic import ValidationError
 
 from app.agent.model_router import (
     MODEL_PRIORITY,
     AllModelsRateLimitedError,
     ModelAuthenticationError,
+    ModelInvocationError,
     ModelRouter,
     ModelSpec,
     RollingWindowRateLimiter,
     _ModelState,
+    tool_history_family,
 )
 from app.agent.tool_executor import execute_tool
 from app.agent.tools.search_products import SearchProductsInput
@@ -54,6 +62,40 @@ def make_router(
         tool_client_factory=lambda model_id: clients[model_id],
         clock=clock,
     )
+
+
+def tool_history(model_name: str) -> list[AIMessage | ToolMessage]:
+    ai_message = AIMessage(
+        content="",
+        tool_calls=[
+            {
+                "name": "get_test_value",
+                "args": {"value": "ok"},
+                "id": "tool-call-1",
+                "type": "tool_call",
+            }
+        ],
+        response_metadata={"model_name": model_name},
+    )
+    return [
+        ai_message,
+        ToolMessage(
+            content='{"value":"ok"}',
+            tool_call_id="tool-call-1",
+            name="get_test_value",
+        ),
+    ]
+
+
+TOOL_MODEL_SPECS = tuple(
+    ModelSpec(model_id, 1)
+    for model_id in (
+        "gemini-3.5-flash-lite",
+        "gemini-3.1-flash-lite",
+        "gemma-4-31b-it",
+        "gemma-4-26b-a4b-it",
+    )
+)
 
 
 class ModelRouterTests(unittest.IsolatedAsyncioTestCase):
@@ -134,6 +176,90 @@ class ModelRouterTests(unittest.IsolatedAsyncioTestCase):
                 )
                 self.assertEqual(result.model_id, expected)
                 self.assertEqual(calls, [expected])
+
+    async def test_tool_history_family_uses_response_metadata(self) -> None:
+        self.assertIsNone(tool_history_family([HumanMessage(content="hello")]))
+        self.assertEqual(
+            tool_history_family(tool_history("gemini-3.5-flash-lite")),
+            "gemini",
+        )
+        self.assertEqual(
+            tool_history_family(tool_history("gemma-4-31b-it")),
+            "gemma",
+        )
+
+        restored = messages_from_dict(
+            [message_to_dict(message) for message in tool_history("gemini-3.5-flash-lite")]
+        )
+        self.assertEqual(tool_history_family(restored), "gemini")
+
+    async def test_gemini_tool_history_excludes_gemma_models(self) -> None:
+        clock = FakeClock()
+        calls: list[str] = []
+        router = make_router(clock, TOOL_MODEL_SPECS, calls)
+
+        result = await router.ainvoke_with_fallback(tool_history("gemini-3.5-flash-lite"))
+        self.assertEqual(result.model_id, "gemini-3.5-flash-lite")
+        self.assertEqual(calls, ["gemini-3.5-flash-lite"])
+
+    async def test_gemini_tool_history_falls_back_to_3_1_only(self) -> None:
+        clock = FakeClock()
+        calls: list[str] = []
+        router = make_router(clock, TOOL_MODEL_SPECS, calls)
+        await router._states["gemini-3.5-flash-lite"].limiter.try_reserve()
+
+        result = await router.ainvoke_with_fallback(tool_history("gemini-3.5-flash-lite"))
+        self.assertEqual(result.model_id, "gemini-3.1-flash-lite")
+        self.assertEqual(calls, ["gemini-3.1-flash-lite"])
+
+    async def test_gemini_tool_history_does_not_fallback_to_gemma(self) -> None:
+        clock = FakeClock()
+        calls: list[str] = []
+        router = make_router(clock, TOOL_MODEL_SPECS, calls)
+        for model_id in ("gemini-3.5-flash-lite", "gemini-3.1-flash-lite"):
+            await router._states[model_id].limiter.try_reserve()
+
+        with self.assertRaises(AllModelsRateLimitedError) as context:
+            await router.ainvoke_with_fallback(tool_history("gemini-3.5-flash-lite"))
+        self.assertEqual(context.exception.retry_after, 60)
+        self.assertEqual(calls, [])
+
+    async def test_gemma_tool_history_stays_with_gemma_family(self) -> None:
+        clock = FakeClock()
+        calls: list[str] = []
+        router = make_router(clock, TOOL_MODEL_SPECS, calls)
+
+        result = await router.ainvoke_with_fallback(tool_history("gemma-4-31b-it"))
+        self.assertEqual(result.model_id, "gemma-4-31b-it")
+        self.assertEqual(calls, ["gemma-4-31b-it"])
+
+        calls.clear()
+        self.assertFalse(await router._states["gemma-4-31b-it"].limiter.try_reserve())
+        result = await router.ainvoke_with_fallback(tool_history("gemma-4-31b-it"))
+        self.assertEqual(result.model_id, "gemma-4-26b-a4b-it")
+        self.assertEqual(calls, ["gemma-4-26b-a4b-it"])
+
+    async def test_unidentified_tool_history_fails_closed(self) -> None:
+        clock = FakeClock()
+        calls: list[str] = []
+        router = make_router(clock, TOOL_MODEL_SPECS, calls)
+        history = tool_history("provider-without-a-supported-family")
+
+        with self.assertRaises(ModelInvocationError):
+            await router.ainvoke_with_fallback(history)
+        self.assertEqual(calls, [])
+
+    async def test_retry_after_uses_only_eligible_tool_history_models(self) -> None:
+        clock = FakeClock()
+        calls: list[str] = []
+        router = make_router(clock, TOOL_MODEL_SPECS, calls)
+        router._states["gemini-3.5-flash-lite"].limiter._timestamps.append(-40)
+        router._states["gemini-3.1-flash-lite"].limiter._timestamps.append(-52)
+
+        with self.assertRaises(AllModelsRateLimitedError) as context:
+            await router.ainvoke_with_fallback(tool_history("gemini-3.5-flash-lite"))
+        self.assertEqual(context.exception.retry_after, 8)
+        self.assertEqual(calls, [])
 
     async def test_provider_rate_limit_falls_back_and_enters_cooldown(self) -> None:
         specs = tuple(ModelSpec(model_id, 1) for model_id in ("a", "b"))
