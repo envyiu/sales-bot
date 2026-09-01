@@ -23,6 +23,17 @@ docker compose up --build
 
 The database uses the `pgvector/pgvector:pg16` image and stores data in the named `postgres_data` volume.
 
+## Database setup
+
+Alembic manages the catalog schema. The initial migration enables the PostgreSQL `vector` extension and creates the `products`, `product_specs`, and `inventory` tables. The seed script inserts a small demo catalog.
+
+```bash
+docker compose exec backend alembic upgrade head
+docker compose exec backend python -m scripts.seed_catalog
+```
+
+The seed command is idempotent and can be run again without duplicating products.
+
 ## URLs
 
 - Frontend: http://localhost:3000
@@ -33,7 +44,7 @@ The database uses the `pgvector/pgvector:pg16` image and stores data in the name
 
 ## Database migrations
 
-Alembic is configured to use the same `DATABASE_URL` as the application. There are no application tables or migrations yet.
+Alembic is configured to use the same `DATABASE_URL` as the application. The catalog migration creates the initial application tables.
 
 ```bash
 docker compose exec backend alembic current
