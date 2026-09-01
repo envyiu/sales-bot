@@ -3,6 +3,7 @@ from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.api.router import api_router
 from app.db.session import get_db
 
 
@@ -10,6 +11,7 @@ app = FastAPI(
     title="Sales Bot API",
     description="Foundation API for the sales chatbot.",
 )
+app.include_router(api_router)
 
 
 @app.get("/health")

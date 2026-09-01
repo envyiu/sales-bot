@@ -42,6 +42,19 @@ The seed command is idempotent and can be run again without duplicating products
 - Health: http://localhost:8000/health
 - DB Health: http://localhost:8000/health/db
 
+## Catalog API
+
+- `GET /api/products` — list active products with pagination, filters, search, and sorting.
+- `GET /api/products/{slug}` — get an active product with its specification and inventory.
+
+Examples:
+
+```bash
+curl 'http://localhost:8000/api/products?brand=Samsung&brand=Apple&limit=5'
+curl 'http://localhost:8000/api/products?q=galaxy&sort=price_asc'
+curl 'http://localhost:8000/api/products/samsung-galaxy-a56-5g'
+```
+
 ## Database migrations
 
 Alembic is configured to use the same `DATABASE_URL` as the application. The catalog migration creates the initial application tables.
