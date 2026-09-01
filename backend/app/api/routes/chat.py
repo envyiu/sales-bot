@@ -56,7 +56,7 @@ async def create_chat_message(
         raise HTTPException(
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
             detail="Chat provider rate limit reached",
-            headers={"Retry-After": "30"},
+            headers={"Retry-After": str(exc.retry_after)},
         ) from exc
     except ChatProviderTemporaryError as exc:
         raise HTTPException(
@@ -87,5 +87,6 @@ async def create_chat_message(
     return ChatResponse(
         conversation_id=result.conversation_id,
         message=result.message,
+        model=result.model,
         products=[ChatProduct.model_validate(product) for product in result.products],
     )

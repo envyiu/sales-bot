@@ -23,6 +23,17 @@ docker compose up --build
 
 The database uses the `pgvector/pgvector:pg16` image and stores data in the named `postgres_data` volume. Set `GOOGLE_API_KEY` in `.env` before using the chat endpoint; the key is consumed by the backend only.
 
+The backend routes requests through this priority-ordered Gemini model fallback chain:
+
+```text
+gemini-3.5-flash-lite (15 RPM)
+gemini-3.1-flash-lite (15 RPM)
+gemma-4-31b-it (30 RPM)
+gemma-4-26b-a4b-it (30 RPM)
+```
+
+The limiter and provider cooldown state are in memory for the single Docker backend process. If the backend is later scaled across workers or containers, move that state to shared storage such as Redis.
+
 ## Database setup
 
 Alembic manages the catalog schema. The initial migration enables the PostgreSQL `vector` extension and creates the `products`, `product_specs`, and `inventory` tables. The seed script inserts a small demo catalog.
@@ -65,7 +76,7 @@ curl 'http://localhost:8000/api/products/samsung-galaxy-a56-5g'
 
 ## Chat API
 
-`POST /api/chat` sends a message through LangChain and the configured Gemini model. A missing `conversation_id` starts a conversation; reuse the returned ID for follow-up messages.
+`POST /api/chat` sends a message through LangChain and the model fallback router. The response includes the model that actually answered. A missing `conversation_id` starts a conversation; reuse the returned ID for follow-up messages.
 
 ```bash
 curl -X POST http://localhost:8000/api/chat \

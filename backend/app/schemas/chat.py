@@ -38,4 +38,5 @@ class ChatProduct(BaseModel):
 class ChatResponse(BaseModel):
     conversation_id: UUID
     message: str
+    model: str
     products: list[ChatProduct] = Field(default_factory=list)

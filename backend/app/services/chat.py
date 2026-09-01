@@ -1,5 +1,4 @@
 import json
-import logging
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Any
@@ -16,13 +15,21 @@ from langchain_core.messages import (
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.agent.llm import LLMConfigurationError, get_llm_with_tools
+from app.agent.llm import LLMConfigurationError
+from app.agent.model_router import (
+    AllModelsRateLimitedError,
+    ModelAuthenticationError,
+    ModelInvocationError,
+    ModelInvocationResult,
+    ModelTemporaryError,
+    get_model_router,
+)
 from app.agent.prompts import SYSTEM_PROMPT
+from app.agent.tools import TOOLS
 from app.agent.tool_executor import ToolExecution, execute_tool
 from app.models import Conversation, Message, ToolCall
 
 
-logger = logging.getLogger(__name__)
 HISTORY_MESSAGE_LIMIT = 20
 HISTORY_FETCH_LIMIT = HISTORY_MESSAGE_LIMIT * 2
 MAX_TOOL_ITERATIONS = 5
@@ -32,6 +39,7 @@ MAX_TOOL_ITERATIONS = 5
 class ChatTurnResult:
     conversation_id: UUID
     message: str
+    model: str
     products: list[dict[str, Any]]
 
 
@@ -65,6 +73,10 @@ class ChatProviderAuthenticationError(ChatProviderError):
 
 class ChatProviderRateLimitError(ChatProviderError):
     """Raised when Gemini rate-limits the request."""
+
+    def __init__(self, message: str, retry_after: int = 60) -> None:
+        self.retry_after = max(1, retry_after)
+        super().__init__(message)
 
 
 class ChatProviderTemporaryError(ChatProviderError):
@@ -180,105 +192,29 @@ def _stored_content_text(message: BaseMessage) -> str:
         return ""
 
 
-def _provider_error(exc: Exception) -> ChatProviderError:
-    error_name = type(exc).__name__.lower()
-    error_text = str(exc).lower()
-    combined = f"{error_name} {error_text}"
-
-    if any(
-        marker in combined
-        for marker in (
-            "unauthenticated",
-            "permissiondenied",
-            "authentication",
-            "invalid api key",
-            "api key not valid",
-        )
-    ):
-        return ChatProviderAuthenticationError("Gemini authentication failed")
-
-    if any(
-        marker in combined
-        for marker in (
-            "resourceexhausted",
-            "resource_exhausted",
-            "rate limit",
-            "ratelimit",
-            "quota",
-        )
-    ):
-        return ChatProviderRateLimitError("Gemini rate limit reached")
-
-    if any(
-        marker in combined
-        for marker in (
-            "serviceunavailable",
-            "internalserver",
-            "deadlineexceeded",
-            "timeout",
-            "connection",
-            "temporarily unavailable",
-            "statuscode=503",
-        )
-    ):
-        return ChatProviderTemporaryError("Gemini is temporarily unavailable")
-
-    return ChatProviderError("Gemini request failed")
-
-
-async def _invoke_llm(messages: list[BaseMessage], conversation_id: UUID) -> AIMessage:
+async def _invoke_llm(
+    messages: list[BaseMessage],
+    conversation_id: UUID,
+) -> ModelInvocationResult:
     try:
-        llm = get_llm_with_tools()
+        return await get_model_router().ainvoke_with_fallback(
+            messages,
+            conversation_id=conversation_id,
+            tools=TOOLS,
+        )
     except LLMConfigurationError:
-        logger.warning(
-            "llm_call",
-            extra={
-                "event": "llm_call",
-                "conversation_id": str(conversation_id),
-                "status": "configuration_error",
-            },
-        )
         raise
-    except Exception as exc:
-        logger.warning(
-            "llm_call",
-            extra={
-                "event": "llm_call",
-                "conversation_id": str(conversation_id),
-                "status": "configuration_error",
-                "error_type": type(exc).__name__,
-            },
-        )
-        raise LLMConfigurationError("Gemini client configuration is invalid") from exc
-
-    try:
-        response = await llm.ainvoke(messages)
-    except Exception as exc:
-        provider_error = _provider_error(exc)
-        logger.warning(
-            "llm_call",
-            extra={
-                "event": "llm_call",
-                "conversation_id": str(conversation_id),
-                "status": "provider_error",
-                "error_type": type(exc).__name__,
-            },
-        )
-        raise provider_error from exc
-
-    if not isinstance(response, AIMessage):
-        raise InvalidChatResponseError("Gemini returned an unexpected message type")
-
-    logger.info(
-        "llm_call",
-        extra={
-            "event": "llm_call",
-            "conversation_id": str(conversation_id),
-            "status": "success",
-            "tool_call_count": len(response.tool_calls),
-        },
-    )
-    return response
+    except ModelAuthenticationError as exc:
+        raise ChatProviderAuthenticationError("Gemini authentication failed") from exc
+    except AllModelsRateLimitedError as exc:
+        raise ChatProviderRateLimitError(
+            "Gemini rate limit reached",
+            retry_after=exc.retry_after,
+        ) from exc
+    except ModelTemporaryError as exc:
+        raise ChatProviderTemporaryError("Gemini is temporarily unavailable") from exc
+    except ModelInvocationError as exc:
+        raise ChatProviderError("Gemini request failed") from exc
 
 
 async def _load_history(
@@ -389,9 +325,12 @@ async def generate_chat_reply(
     new_messages: list[BaseMessage] = [human_message]
     latest_search_products: list[dict[str, Any]] = []
     conversation_exists = existing_conversation
+    model_used: str | None = None
 
     for _ in range(MAX_TOOL_ITERATIONS):
-        ai_message = await _invoke_llm(llm_messages, target_conversation_id)
+        invocation = await _invoke_llm(llm_messages, target_conversation_id)
+        model_used = invocation.model_id
+        ai_message = invocation.message
         llm_messages.append(ai_message)
         new_messages.append(ai_message)
 
@@ -428,5 +367,6 @@ async def generate_chat_reply(
     return ChatTurnResult(
         conversation_id=target_conversation_id,
         message=visible_text,
+        model=model_used or "unknown",
         products=latest_search_products,
     )
