@@ -3,7 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.agent.llm import LLMConfigurationError
 from app.db.session import get_db
-from app.schemas.chat import ChatRequest, ChatResponse
+from app.schemas.chat import ChatProduct, ChatRequest, ChatResponse
 from app.services.chat import (
     ChatHistoryError,
     ChatPersistenceError,
@@ -13,6 +13,7 @@ from app.services.chat import (
     ChatProviderTemporaryError,
     ConversationNotFoundError,
     InvalidChatResponseError,
+    ToolLoopLimitError,
     generate_chat_reply,
 )
 
@@ -26,7 +27,7 @@ async def create_chat_message(
     session: AsyncSession = Depends(get_db),
 ) -> ChatResponse:
     try:
-        conversation_id, response_text = await generate_chat_reply(
+        result = await generate_chat_reply(
             session=session,
             message=payload.message,
             conversation_id=payload.conversation_id,
@@ -72,10 +73,19 @@ async def create_chat_message(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="Chat response could not be saved",
         ) from exc
+    except ToolLoopLimitError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="Chat provider exceeded the tool-call limit",
+        ) from exc
     except ChatProviderError as exc:
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
             detail="Chat provider request failed",
         ) from exc
 
-    return ChatResponse(conversation_id=conversation_id, message=response_text)
+    return ChatResponse(
+        conversation_id=result.conversation_id,
+        message=result.message,
+        products=[ChatProduct.model_validate(product) for product in result.products],
+    )

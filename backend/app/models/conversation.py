@@ -9,6 +9,7 @@ from app.db.base import Base
 
 if TYPE_CHECKING:
     from app.models.message import Message
+    from app.models.tool_call import ToolCall
 
 
 class Conversation(Base):
@@ -32,4 +33,10 @@ class Conversation(Base):
         cascade="all, delete-orphan",
         passive_deletes=True,
         order_by="Message.id",
+    )
+    tool_calls: Mapped[list["ToolCall"]] = relationship(
+        back_populates="conversation",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+        order_by="ToolCall.id",
     )

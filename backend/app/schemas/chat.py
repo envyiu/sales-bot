@@ -16,6 +16,26 @@ class ChatRequest(BaseModel):
         return message
 
 
+class ChatProduct(BaseModel):
+    id: int
+    slug: str
+    name: str
+    brand: str
+    model: str
+    price_vnd: int
+    image_url: str | None
+    ram_gb: int
+    storage_gb: int
+    chipset: str
+    battery_mah: int
+    gaming_score: float
+    battery_score: float
+    performance_score: float
+    stock_quantity: int
+    ranking_score: float | None
+
+
 class ChatResponse(BaseModel):
     conversation_id: UUID
     message: str
+    products: list[ChatProduct] = Field(default_factory=list)

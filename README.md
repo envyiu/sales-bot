@@ -73,7 +73,9 @@ curl -X POST http://localhost:8000/api/chat \
   -d '{"message":"Tôi cần tư vấn điện thoại cho việc chụp ảnh."}'
 ```
 
-Chat history is stored in `conversations` and `messages`. LangChain message payloads are stored as JSONB so later tool-calling work can rehydrate provider metadata. Catalog tools and streaming are not enabled yet.
+Chat history is stored in `conversations` and `messages`. LangChain message payloads are stored as JSONB so tool-call metadata can be rehydrated. The advisor can call `search_products`, `get_product_detail`, and `check_inventory`; tool executions are recorded in `tool_calls`.
+
+Recommendations are ranked from catalog scores in the database. Current inventory questions use `check_inventory` at request time. Tool telemetry is committed as execution events, while chat messages are committed only as a complete successful turn; a failed first turn can therefore leave an empty conversation with telemetry. Streaming, RAG, and a frontend chat widget are not enabled yet.
 
 ## Database migrations
 
