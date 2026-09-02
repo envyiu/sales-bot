@@ -58,45 +58,60 @@ export default function ChatWidget() {
     setError(null);
   }
 
-  async function handleSend(message: string): Promise<void> {
-    if (!isReady || isSending || !message.trim()) return;
+  const handleSend = useCallback(
+    async (message: string): Promise<void> => {
+      if (isSending || !message.trim()) return;
 
-    const userMessage: ChatMessage = {
-      id: `user-${Date.now()}`,
-      role: "user",
-      content: message,
-    };
-    setMessages((current) => [...current, userMessage]);
-    setError(null);
-    setIsSending(true);
+      const userMessage: ChatMessage = {
+        id: `user-${Date.now()}`,
+        role: "user",
+        content: message,
+      };
+      setMessages((current) => [...current, userMessage]);
+      setError(null);
+      setIsSending(true);
 
-    try {
-      const response = await sendChatMessage({
-        conversationId,
-        message,
-      });
-      setConversationId(response.conversation_id);
-      window.localStorage.setItem(STORAGE_KEY, response.conversation_id);
-      setMessages((current) => [
-        ...current,
-        {
-          id: `assistant-${Date.now()}`,
-          role: "assistant",
-          content: response.message,
-          model: response.model,
-          products: response.products,
-        },
-      ]);
-    } catch (requestError) {
-      if (requestError instanceof ChatApiError && requestError.status === 404) {
-        window.localStorage.removeItem(STORAGE_KEY);
-        setConversationId(null);
+      try {
+        const response = await sendChatMessage({
+          conversationId,
+          message,
+        });
+        setConversationId(response.conversation_id);
+        window.localStorage.setItem(STORAGE_KEY, response.conversation_id);
+        setMessages((current) => [
+          ...current,
+          {
+            id: `assistant-${Date.now()}`,
+            role: "assistant",
+            content: response.message,
+            model: response.model,
+            products: response.products,
+          },
+        ]);
+      } catch (requestError) {
+        if (requestError instanceof ChatApiError && requestError.status === 404) {
+          window.localStorage.removeItem(STORAGE_KEY);
+          setConversationId(null);
+        }
+        setError(errorMessage(requestError));
+      } finally {
+        setIsSending(false);
       }
-      setError(errorMessage(requestError));
-    } finally {
-      setIsSending(false);
+    },
+    [conversationId, isSending]
+  );
+
+  useEffect(() => {
+    function handleOpenEvent(event: Event) {
+      setIsOpen(true);
+      const customEvent = event as CustomEvent<{ prompt?: string }>;
+      if (customEvent.detail?.prompt) {
+        void handleSend(customEvent.detail.prompt);
+      }
     }
-  }
+    window.addEventListener("open-sales-bot-chat", handleOpenEvent);
+    return () => window.removeEventListener("open-sales-bot-chat", handleOpenEvent);
+  }, [handleSend]);
 
   return (
     <aside className="chat-widget">
@@ -117,10 +132,10 @@ export default function ChatWidget() {
         onClick={() => setIsOpen((open) => !open)}
         aria-expanded={isOpen}
         aria-controls="sales-bot-chat-panel"
-        aria-label={isOpen ? "Close AI smartphone advisor" : "Open AI smartphone advisor"}
+        aria-label={isOpen ? "Đóng trợ lý bán hàng AI" : "Mở trợ lý bán hàng AI"}
       >
-        <span aria-hidden="true">✦</span>
-        <span>{isOpen ? "Close" : "Chat"}</span>
+        <span className="chat-widget__launcher-mark" aria-hidden="true">✦</span>
+        <span>{isOpen ? "Đóng" : "Tư vấn AI"}</span>
       </button>
     </aside>
   );

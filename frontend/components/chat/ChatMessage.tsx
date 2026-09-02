@@ -14,10 +14,10 @@ export default function ChatMessage({ message }: ChatMessageProps) {
         <p>{message.content}</p>
       </div>
       {message.role === "assistant" && message.model ? (
-        <p className="chat-message__model">Answered by {message.model}</p>
+        <p className="chat-message__model">Phản hồi bởi {message.model}</p>
       ) : null}
       {products.length > 0 ? (
-        <div className="chat-message__products" aria-label="Recommended phones">
+        <div className="chat-message__products" aria-label="Điện thoại được đề xuất">
           {products.map((product) => (
             <ChatProductCard key={product.id} product={product} />
           ))}

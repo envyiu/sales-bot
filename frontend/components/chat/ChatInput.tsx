@@ -1,4 +1,5 @@
 import { FormEvent, KeyboardEvent, useState } from "react";
+import { Send } from "lucide-react";
 
 interface ChatInputProps {
   disabled: boolean;
@@ -26,7 +27,7 @@ export default function ChatInput({ disabled, onSubmit }: ChatInputProps) {
   return (
     <form className="chat-input" onSubmit={submitMessage}>
       <label className="sr-only" htmlFor="chat-message-input">
-        Message for AI smartphone advisor
+        Tin nhắn cho trợ lý AI Sales Bot
       </label>
       <textarea
         id="chat-message-input"
@@ -34,8 +35,8 @@ export default function ChatInput({ disabled, onSubmit }: ChatInputProps) {
         value={value}
         maxLength={4000}
         rows={1}
-        placeholder="Type a message..."
-        aria-label="Message for AI smartphone advisor"
+        placeholder="Hỏi về camera, pin, gaming, giá máy..."
+        aria-label="Tin nhắn gửi trợ lý bán hàng AI"
         disabled={disabled}
         onChange={(event) => setValue(event.target.value)}
         onKeyDown={handleKeyDown}
@@ -44,8 +45,10 @@ export default function ChatInput({ disabled, onSubmit }: ChatInputProps) {
         className="chat-input__send"
         type="submit"
         disabled={disabled || !value.trim()}
+        aria-label="Gửi tin nhắn"
       >
-        Send
+        <Send size={15} aria-hidden="true" />
+        <span>Gửi</span>
       </button>
     </form>
   );

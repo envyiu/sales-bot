@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import Header from "@/components/Header";
 import Pagination from "@/components/Pagination";
 import ProductCard from "@/components/ProductCard";
@@ -68,9 +70,9 @@ export default async function ProductsPage({
       <main className="products-page page-shell">
         <div className="page-heading">
           <div>
-            <p className="eyebrow">Smartphone catalog</p>
-            <h1>Find your next phone</h1>
-            <p>Compare the essentials and choose with confidence.</p>
+            <p className="eyebrow">Bộ Sưu Tập Chính Hãng</p>
+            <h1>Khám Phá Smartphone Đỉnh Cao</h1>
+            <p>So sánh thông số, đánh giá hiệu năng và lựa chọn thiết bị hoàn hảo cho bạn.</p>
           </div>
         </div>
 
@@ -84,15 +86,20 @@ export default async function ProductsPage({
 
         {products.total === 0 ? (
           <div className="empty-state">
-            <h2>No phones found matching your filters.</h2>
-            <p>Try a different search or broaden your price range.</p>
+            <h2>Không tìm thấy sản phẩm phù hợp.</h2>
+            <p>Hãy thử tìm kiếm với từ khóa khác hoặc điều chỉnh lại khoảng giá.</p>
+            <div style={{ marginTop: "1.5rem" }}>
+              <Link className="empty-state__btn" href="/products">
+                Xem Tất Cả Sản Phẩm
+              </Link>
+            </div>
           </div>
         ) : (
           <>
             <p className="results-count">
-              Showing {products.items.length} of {products.total} phones
+              Hiển thị {products.items.length} trên {products.total} sản phẩm
             </p>
-            <section className="product-grid" aria-label="Products">
+            <section className="product-grid" aria-label="Danh sách smartphone">
               {products.items.map((product) => (
                 <ProductCard key={product.id} product={product} />
               ))}

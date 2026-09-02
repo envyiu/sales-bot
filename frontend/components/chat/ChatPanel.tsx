@@ -45,13 +45,13 @@ export default function ChatPanel({
       className="chat-panel"
       role="dialog"
       aria-modal="false"
-      aria-label="AI smartphone advisor"
+      aria-label="Trợ lý bán hàng smartphone AI"
       data-testid="chat-panel"
     >
       <header className="chat-panel__header">
         <div>
-          <p className="chat-panel__eyebrow">Sales Bot</p>
-          <h2>AI Smartphone Advisor</h2>
+          <p className="chat-panel__eyebrow">Sales Bot Intelligence</p>
+          <h2>Trợ Lý Bán Hàng AI</h2>
         </div>
         <div className="chat-panel__actions">
           <button
@@ -59,14 +59,15 @@ export default function ChatPanel({
             type="button"
             onClick={onNewChat}
             disabled={isSending}
+            title="Bắt đầu đoạn chat mới"
           >
-            New chat
+            Đoạn chat mới
           </button>
           <button
             className="chat-panel__close"
             type="button"
             onClick={onClose}
-            aria-label="Close chat"
+            aria-label="Đóng bảng chat"
           >
             ×
           </button>
@@ -80,7 +81,10 @@ export default function ChatPanel({
         {isSending ? (
           <div className="chat-message chat-message--assistant">
             <div className="chat-message__bubble chat-message__bubble--loading">
-              Bot is thinking...
+              <span className="typing-dot" />
+              <span className="typing-dot" />
+              <span className="typing-dot" />
+              <span>Sales Bot đang suy nghĩ...</span>
             </div>
           </div>
         ) : null}
