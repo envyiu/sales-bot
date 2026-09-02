@@ -11,8 +11,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.agent.tools.inventory import InventoryInput
 from app.agent.tools.product_detail import ProductDetailInput
+from app.agent.tools.retrieve_product_knowledge import RetrieveProductKnowledgeInput
 from app.agent.tools.search_products import ProductPriorities, SearchProductsInput
 from app.models import Product
+from app.rag.retriever import document_to_retrieval_hit, retrieve_product_knowledge
 from app.services.catalog import (
     AdvisorSearchCriteria,
     advisor_candidate_to_dict,
@@ -149,10 +151,33 @@ async def _run_inventory(
     }
 
 
+async def _run_retrieve_product_knowledge(
+    session: AsyncSession,
+    arguments: BaseModel,
+) -> dict[str, Any]:
+    payload = arguments
+    assert isinstance(payload, RetrieveProductKnowledgeInput)
+    documents = await retrieve_product_knowledge(
+        session=session,
+        query=payload.query,
+        product_ids=payload.product_ids,
+        top_k=payload.top_k,
+    )
+    hits = [
+        document_to_retrieval_hit(document)
+        for document in documents
+    ]
+    return {"query": payload.query, "hits": hits}
+
+
 TOOL_HANDLERS: dict[str, tuple[type[BaseModel], ToolHandler]] = {
     "search_products": (SearchProductsInput, _run_search_products),
     "get_product_detail": (ProductDetailInput, _run_product_detail),
     "check_inventory": (InventoryInput, _run_inventory),
+    "retrieve_product_knowledge": (
+        RetrieveProductKnowledgeInput,
+        _run_retrieve_product_knowledge,
+    ),
 }
 
 

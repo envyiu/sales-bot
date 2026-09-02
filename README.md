@@ -86,9 +86,23 @@ curl -X POST http://localhost:8000/api/chat \
   -d '{"message":"Tôi cần tư vấn điện thoại cho việc chụp ảnh."}'
 ```
 
-Chat history is stored in `conversations` and `messages`. LangChain message payloads are stored as JSONB so tool-call metadata can be rehydrated. The advisor can call `search_products`, `get_product_detail`, and `check_inventory`; tool executions are recorded in `tool_calls`.
+Chat history is stored in `conversations` and `messages`. LangChain message payloads are stored as JSONB so tool-call metadata can be rehydrated. The advisor can call `search_products`, `get_product_detail`, `check_inventory`, and `retrieve_product_knowledge`; tool executions are recorded in `tool_calls`.
 
-Recommendations are ranked from catalog scores in the database. Current inventory questions use `check_inventory` at request time. Tool telemetry is committed as execution events, while chat messages are committed only as a complete successful turn; a failed first turn can therefore leave an empty conversation with telemetry. Streaming, RAG, and a frontend chat widget are not enabled yet.
+Recommendations are ranked from catalog scores in the database. Current inventory questions use `check_inventory` at request time. Semantic experience questions can use the scoped product knowledge corpus; structured catalog data remains authoritative for price, stock, and exact specifications. Tool telemetry is committed as execution events, while chat messages are committed only as a complete successful turn; a failed first turn can therefore leave an empty conversation with telemetry.
+
+## Knowledge RAG
+
+Knowledge files live in `backend/data/knowledge/`, one Markdown file per product slug. The ingestion script resolves slugs against the catalog, splits topic sections, and stores Gemini Embedding 2 vectors in `product_documents` using 768 dimensions.
+
+```bash
+docker compose exec backend alembic upgrade head
+docker compose exec backend python -m scripts.seed_catalog
+docker compose exec backend python -m scripts.ingest_knowledge
+```
+
+The `retrieve_product_knowledge` tool is scoped to recommendation candidates when appropriate. It provides semantic evidence for gaming, camera, video, battery experience, thermals, strengths, weaknesses, and suitable users; it is not authoritative for live price, stock, or exact specifications.
+
+The storefront includes a floating chat widget. Browser requests go to the same-origin Next.js `/api/chat` proxy, while the backend URL and Google API key remain server-side. The browser stores only `conversation_id` in localStorage; the transcript currently resets after a full page reload because no public history endpoint exists yet.
 
 ## Database migrations
 

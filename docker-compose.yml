@@ -23,6 +23,7 @@ services:
     environment:
       DATABASE_URL: ${DATABASE_URL:?DATABASE_URL is required}
       GOOGLE_API_KEY: ${GOOGLE_API_KEY:-}
+      EMBEDDING_MODEL: ${EMBEDDING_MODEL:-gemini-embedding-2}
     ports:
       - "8000:8000"
     depends_on:

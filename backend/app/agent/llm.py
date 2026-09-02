@@ -32,7 +32,7 @@ def get_llm(model_id: str) -> ChatGoogleGenerativeAI:
 
 @lru_cache(maxsize=4)
 def get_llm_with_tools(model_id: str):
-    """Return a cached model client bound to the Task 006 advisor tools."""
+    """Return a cached model client bound to the current advisor tool set."""
 
     try:
         return get_llm(model_id).bind_tools(TOOLS)

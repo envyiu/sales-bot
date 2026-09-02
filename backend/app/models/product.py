@@ -20,6 +20,7 @@ from app.db.base import Base
 
 if TYPE_CHECKING:
     from app.models.inventory import Inventory
+    from app.models.product_document import ProductDocument
     from app.models.product_spec import ProductSpec
 
 
@@ -76,4 +77,10 @@ class Product(Base):
         cascade="all, delete-orphan",
         passive_deletes=True,
         single_parent=True,
+    )
+    knowledge_documents: Mapped[list["ProductDocument"]] = relationship(
+        back_populates="product",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+        order_by="ProductDocument.chunk_index",
     )
