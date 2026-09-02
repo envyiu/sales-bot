@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import {
   Sparkles,
   ChevronRight,
@@ -18,6 +19,9 @@ import {
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 
+import { formatPrice } from "@/lib/format";
+import type { ProductDetail } from "@/lib/types";
+
 if (typeof window !== "undefined") {
   gsap.registerPlugin(ScrollTrigger);
 }
@@ -29,10 +33,10 @@ const FLAGSHIPS = [
     brand: "Apple",
     headline: "Đỉnh cao Titanium. A18 Pro.",
     price: "34.990.000₫",
-    chipset: "Apple A18 Pro 3nm",
-    camera: "48MP Fusion 5x Telephoto",
+    chipset: "Apple A18 Pro",
+    camera: "48MP main + 48MP ultrawide + 12MP telephoto",
     battery: "4.685 mAh • 30W",
-    display: "6.9\" Super Retina XDR 120Hz",
+    display: "6.9\" LTPO Super Retina XDR 120Hz",
     image: "/images/iphone-16-pro.jpg",
     highlight: "Titanium Tự Nhiên",
   },
@@ -100,9 +104,45 @@ const APPLE_PILLARS = [
   },
 ];
 
-export default function LandingPage() {
+interface LandingPageProps {
+  initialProducts?: ProductDetail[];
+}
+
+export default function LandingPage({ initialProducts = [] }: LandingPageProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const heroImageRef = useRef<HTMLDivElement>(null);
+
+  const productMap = new Map(initialProducts.map((p) => [p.slug, p]));
+  const heroProduct = productMap.get("apple-iphone-16-pro-max");
+  const heroPrice = heroProduct ? formatPrice(heroProduct.price_vnd) : "34.990.000₫";
+
+  const flagships = FLAGSHIPS.map((phone) => {
+    const live = productMap.get(phone.slug);
+    if (!live) {
+      return {
+        ...phone,
+        stockStatus: "Còn hàng",
+        inStock: true,
+      };
+    }
+    const spec = live.spec;
+    const inStock = live.inventory.quantity > 0;
+    return {
+      slug: live.slug,
+      name: live.name,
+      brand: live.brand,
+      headline: phone.headline,
+      price: formatPrice(live.price_vnd),
+      chipset: spec.chipset,
+      camera: spec.rear_camera,
+      battery: `${spec.battery_mah.toLocaleString()} mAh • ${spec.charging_watt}W`,
+      display: `${spec.screen_size_inches}" ${spec.screen_type} ${spec.refresh_rate_hz}Hz`,
+      image: phone.image,
+      highlight: phone.highlight,
+      stockStatus: inStock ? `Còn ${live.inventory.quantity} máy` : "Tạm hết hàng",
+      inStock,
+    };
+  });
 
   useEffect(() => {
     const isReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -215,10 +255,7 @@ export default function LandingPage() {
   }, []);
 
   const handleOpenChat = () => {
-    const launcher = document.querySelector<HTMLButtonElement>(".chat-widget__launcher");
-    if (launcher) {
-      launcher.click();
-    }
+    window.dispatchEvent(new CustomEvent("open-sales-bot-chat"));
   };
 
   return (
@@ -255,15 +292,18 @@ export default function LandingPage() {
           <div className="apple-hero-device" ref={heroImageRef}>
             <div className="apple-device-frame">
               <div className="device-ambient-glow" aria-hidden="true" />
-              <img
+              <Image
                 src="/images/iphone-16-pro.jpg"
                 alt="iPhone 16 Pro Max Titanium Studio Presentation"
+                width={512}
+                height={640}
+                priority
                 className="apple-device-img"
               />
               <div className="device-spec-overlay">
                 <span className="device-pill">Flagship Nổi Bật</span>
-                <h3 className="device-title">iPhone 16 Pro Max</h3>
-                <p className="device-price">Từ 34.990.000₫</p>
+                <h3 className="device-title">{heroProduct ? heroProduct.name : "iPhone 16 Pro Max"}</h3>
+                <p className="device-price">Từ {heroPrice}</p>
               </div>
             </div>
 
@@ -311,11 +351,12 @@ export default function LandingPage() {
           </div>
 
           <div className="chapter-media-wrap">
-            <img
+            <Image
               src="/images/camera-tech.jpg"
               alt="Hệ thống camera smartphone cao cấp"
+              width={560}
+              height={385}
               className="chapter-image"
-              loading="lazy"
             />
           </div>
         </div>
@@ -351,11 +392,12 @@ export default function LandingPage() {
           </div>
 
           <div className="chapter-media-wrap">
-            <img
+            <Image
               src="/images/galaxy-s25.jpg"
               alt="Khung viền Titanium và màn hình Dynamic AMOLED"
+              width={560}
+              height={385}
               className="chapter-image"
-              loading="lazy"
             />
           </div>
         </div>
@@ -391,11 +433,12 @@ export default function LandingPage() {
           </div>
 
           <div className="chapter-media-wrap">
-            <img
+            <Image
               src="/images/gaming-phone.jpg"
               alt="Hiệu năng gaming cực đại"
+              width={560}
+              height={385}
               className="chapter-image"
-              loading="lazy"
             />
           </div>
         </div>
@@ -415,15 +458,27 @@ export default function LandingPage() {
           </div>
 
           <div className="apple-grid">
-            {FLAGSHIPS.map((phone) => (
+            {flagships.map((phone) => (
               <article key={phone.slug} className="apple-card">
                 <div className="apple-card__media">
-                  <span className="apple-card__highlight">{phone.highlight}</span>
-                  <img
+                  <div className="apple-card__badges">
+                    <span className="apple-card__highlight">{phone.highlight}</span>
+                    <span
+                      className={`apple-card__stock-badge ${
+                        phone.inStock
+                          ? "apple-card__stock-badge--in"
+                          : "apple-card__stock-badge--out"
+                      }`}
+                    >
+                      {phone.stockStatus}
+                    </span>
+                  </div>
+                  <Image
                     src={phone.image}
                     alt={phone.name}
+                    width={380}
+                    height={285}
                     className="apple-card__img"
-                    loading="lazy"
                   />
                 </div>
 
@@ -511,7 +566,13 @@ export default function LandingPage() {
                     Với nhu cầu chụp ảnh du lịch và pin bền bỉ trong khoảng 25 - 30 triệu, <strong>Xiaomi 15 Ultra</strong> (29.990.000₫) và <strong>Pixel 9 Pro XL</strong> (26.990.000₫) là sự lựa chọn xuất sắc nhất! Cả hai máy đều sở hữu cụm camera tiềm vọng hàng đầu và pin trên 5.000 mAh.
                   </p>
                   <div className="sim-card-compact">
-                    <img src="/images/camera-tech.jpg" alt="Xiaomi 15 Ultra" className="sim-card-img" />
+                    <Image
+                      src="/images/camera-tech.jpg"
+                      alt="Xiaomi 15 Ultra"
+                      width={52}
+                      height={52}
+                      className="sim-card-img"
+                    />
                     <div className="sim-card-info">
                       <span className="sim-card-name">Xiaomi 15 Ultra</span>
                       <span className="sim-card-stock">● Sẵn hàng trong kho</span>

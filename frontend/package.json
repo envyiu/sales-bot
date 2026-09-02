@@ -12,7 +12,6 @@
     "react": "19.2.8",
     "react-dom": "19.2.8",
     "gsap": "^3.12.5",
-    "@gsap/react": "^2.1.1",
     "lucide-react": "^0.469.0"
   },
   "devDependencies": {

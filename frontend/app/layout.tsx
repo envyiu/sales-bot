@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import ChatWidget from "@/components/chat/ChatWidget";
 import "./globals.css";
+import "./landing.css";
 
 export const metadata: Metadata = {
   title: "Sales Bot",
@@ -13,7 +14,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="vi">
       <body>
         {children}
         <ChatWidget />

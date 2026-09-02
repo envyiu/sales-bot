@@ -15,10 +15,6 @@ export default function ProductDetailActions({ productName }: ProductDetailActio
         detail: { prompt },
       })
     );
-    const launcher = document.querySelector<HTMLButtonElement>(".chat-widget__launcher");
-    if (launcher && launcher.getAttribute("aria-expanded") !== "true") {
-      launcher.click();
-    }
   };
 
   return (
