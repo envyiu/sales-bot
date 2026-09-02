@@ -270,7 +270,7 @@ export default function LandingPage({ initialProducts = [] }: LandingPageProps) 
               <span className="shimmer-text">Đỉnh Cao Hoàn Mỹ.</span>
             </h1>
             <p className="apple-subhead apple-hero-anim">
-              Hội tụ những tuyệt tác di động hàng đầu thế giới, được thấu hiểu và đề xuất chuẩn xác bởi trợ lý AI Sales Bot.
+              Hội tụ những tuyệt tác di động hàng đầu thế giới, được thấu hiểu và đề xuất chuẩn xác bởi trợ lý AI ChoTien.
             </p>
 
             <div className="apple-hero__cta apple-hero-anim">
@@ -530,14 +530,14 @@ export default function LandingPage({ initialProducts = [] }: LandingPageProps) 
               <div className="ai-intelligence-copy">
                 <div className="ai-tag">
                   <Sparkles size={14} className="ai-sparkle" aria-hidden="true" />
-                  <span>Sales Bot Intelligence</span>
+                  <span>ChoTien Intelligence</span>
                 </div>
                 <h2 id="ai-title" className="ai-headline">
                   Trí Tuệ Nhân Tạo. <br />
                   <span className="iridescent-text">Hiểu Đúng Điều Bạn Cần.</span>
                 </h2>
                 <p className="ai-description">
-                  Không phải ai cũng am hiểu công nghệ vi xử lý hay khẩu độ ống kính. Chỉ cần chia sẻ những điều bạn quan tâm, AI Sales Bot sẽ giúp bạn chọn ra sản phẩm đúng giá trị và hợp nhu cầu nhất.
+                  Không phải ai cũng am hiểu công nghệ vi xử lý hay khẩu độ ống kính. Chỉ cần chia sẻ những điều bạn quan tâm, AI ChoTien sẽ giúp bạn chọn ra sản phẩm đúng giá trị và hợp nhu cầu nhất.
                 </p>
 
                 <div className="ai-actions">
@@ -560,7 +560,7 @@ export default function LandingPage({ initialProducts = [] }: LandingPageProps) 
                 <div className="sim-bubble sim-bubble--ai">
                   <div className="sim-ai-brand">
                     <Sparkles size={13} className="sim-ai-icon" />
-                    <span>Sales Bot AI (Gemini 2.5 Flash)</span>
+                    <span>ChoTien AI (Gemini 2.5 Flash)</span>
                   </div>
                   <p>
                     Với nhu cầu chụp ảnh du lịch và pin bền bỉ trong khoảng 25 - 30 triệu, <strong>Xiaomi 15 Ultra</strong> (29.990.000₫) và <strong>Pixel 9 Pro XL</strong> (26.990.000₫) là sự lựa chọn xuất sắc nhất! Cả hai máy đều sở hữu cụm camera tiềm vọng hàng đầu và pin trên 5.000 mAh.

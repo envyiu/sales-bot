@@ -99,13 +99,13 @@ export default function ChatPanel({
       className="chat-panel"
       role="dialog"
       aria-modal="true"
-      aria-label="Trợ lý bán hàng smartphone AI"
+      aria-label="Trợ lý bán hàng smartphone ChoTien"
       data-testid="chat-panel"
     >
       <header className="chat-panel__header">
         <div>
-          <p className="chat-panel__eyebrow">Sales Bot Intelligence</p>
-          <h2>Trợ Lý Bán Hàng AI</h2>
+          <p className="chat-panel__eyebrow">ChoTien Intelligence</p>
+          <h2>Trợ Lý Bán Hàng ChoTien</h2>
         </div>
         <div className="chat-panel__actions">
           <button
@@ -138,7 +138,7 @@ export default function ChatPanel({
               <span className="typing-dot" />
               <span className="typing-dot" />
               <span className="typing-dot" />
-              <span>Sales Bot đang suy nghĩ...</span>
+              <span>ChoTien đang suy nghĩ...</span>
             </div>
           </div>
         ) : null}

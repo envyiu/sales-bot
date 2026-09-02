@@ -5,12 +5,12 @@ export default function Header() {
   return (
     <header className="site-header">
       <div className="site-header__inner">
-        <Link className="brand" href="/" aria-label="Sales Bot - Trang chủ">
+        <Link className="brand" href="/" aria-label="ChoTien - Trang chủ">
           <span className="brand__mark" aria-hidden="true">
             <Sparkles size={16} />
           </span>
           <span className="brand__text">
-            Sales<span className="brand__highlight">Bot</span>
+            Cho<span className="brand__highlight">Tien</span>
           </span>
         </Link>
         <nav className="site-nav" aria-label="Main navigation">

@@ -132,7 +132,7 @@ export default function ChatWidget() {
         onClick={() => setIsOpen((open) => !open)}
         aria-expanded={isOpen}
         aria-controls="sales-bot-chat-panel"
-        aria-label={isOpen ? "Đóng trợ lý bán hàng AI" : "Mở trợ lý bán hàng AI"}
+        aria-label={isOpen ? "Đóng trợ lý bán hàng ChoTien" : "Mở trợ lý bán hàng ChoTien"}
       >
         <span className="chat-widget__launcher-mark" aria-hidden="true">✦</span>
         <span>{isOpen ? "Đóng" : "Tư vấn AI"}</span>

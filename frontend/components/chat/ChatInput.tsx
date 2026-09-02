@@ -27,7 +27,7 @@ export default function ChatInput({ disabled, onSubmit }: ChatInputProps) {
   return (
     <form className="chat-input" onSubmit={submitMessage}>
       <label className="sr-only" htmlFor="chat-message-input">
-        Tin nhắn cho trợ lý AI Sales Bot
+        Tin nhắn cho trợ lý AI ChoTien
       </label>
       <textarea
         id="chat-message-input"
@@ -35,8 +35,8 @@ export default function ChatInput({ disabled, onSubmit }: ChatInputProps) {
         value={value}
         maxLength={4000}
         rows={1}
-        placeholder="Hỏi về camera, pin, gaming, giá máy..."
-        aria-label="Tin nhắn gửi trợ lý bán hàng AI"
+        placeholder="Hỏi ChoTien về camera, pin, gaming, giá máy..."
+        aria-label="Tin nhắn gửi trợ lý bán hàng ChoTien"
         disabled={disabled}
         onChange={(event) => setValue(event.target.value)}
         onKeyDown={handleKeyDown}

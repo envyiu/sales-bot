@@ -4,8 +4,8 @@ import "./globals.css";
 import "./landing.css";
 
 export const metadata: Metadata = {
-  title: "Sales Bot",
-  description: "AI-powered smartphone sales advisor",
+  title: "ChoTien - Trợ lý AI Smartphone",
+  description: "ChoTien - Trợ lý tư vấn bán hàng smartphone AI thông minh",
 };
 
 export default function RootLayout({
