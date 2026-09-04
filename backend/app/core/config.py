@@ -1,5 +1,6 @@
 from functools import lru_cache
 
+from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -7,6 +8,7 @@ class Settings(BaseSettings):
     database_url: str
     google_api_key: str | None = None
     embedding_model: str = "gemini-embedding-2"
+    auth_session_ttl_seconds: int = Field(default=86400, gt=0)
 
     model_config = SettingsConfigDict(
         env_file=".env",

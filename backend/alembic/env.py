@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import async_engine_from_config
 
 from app.core.config import get_settings
 from app.db.base import Base
-from app.models import Inventory, Product, ProductSpec
+from app.models import AuthSession, Conversation, Inventory, Product, ProductSpec, User
 
 
 config = context.config

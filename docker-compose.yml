@@ -24,6 +24,7 @@ services:
       DATABASE_URL: ${DATABASE_URL:?DATABASE_URL is required}
       GOOGLE_API_KEY: ${GOOGLE_API_KEY:-}
       EMBEDDING_MODEL: ${EMBEDDING_MODEL:-gemini-embedding-2}
+      AUTH_SESSION_TTL_SECONDS: ${AUTH_SESSION_TTL_SECONDS:-86400}
     ports:
       - "8000:8000"
     depends_on:
@@ -36,6 +37,8 @@ services:
       dockerfile: Dockerfile
     environment:
       BACKEND_API_URL: ${BACKEND_API_URL:?BACKEND_API_URL is required}
+      AUTH_COOKIE_SECURE: ${AUTH_COOKIE_SECURE:-false}
+      AUTH_SESSION_TTL_SECONDS: ${AUTH_SESSION_TTL_SECONDS:-86400}
     ports:
       - "3000:3000"
 

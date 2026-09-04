@@ -1,3 +1,5 @@
+import { fetchAuthBackend } from "@/lib/server/auth-backend";
+
 const backendPath = "/api/chat";
 
 function jsonResponse(body: Record<string, string>, status: number): Response {
@@ -8,11 +10,6 @@ function jsonResponse(body: Record<string, string>, status: number): Response {
 }
 
 export async function POST(request: Request): Promise<Response> {
-  const backendUrl = process.env.BACKEND_API_URL;
-  if (!backendUrl) {
-    return jsonResponse({ detail: "Chat backend is not configured." }, 500);
-  }
-
   let payload: unknown;
   try {
     payload = await request.json();
@@ -21,15 +18,11 @@ export async function POST(request: Request): Promise<Response> {
   }
 
   try {
-    const response = await fetch(
-      `${backendUrl.replace(/\/$/, "")}${backendPath}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-        cache: "no-store",
-      },
-    );
+    const response = await fetchAuthBackend(backendPath, {
+      method: "POST",
+      request,
+      body: payload,
+    });
 
     const headers = new Headers({
       "Content-Type": response.headers.get("content-type") ?? "application/json",

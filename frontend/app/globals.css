@@ -579,6 +579,249 @@ h1 {
   }
 }
 
+.auth-status {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.auth-status__identity {
+  max-width: 10rem;
+  overflow: hidden;
+  color: var(--foreground);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.auth-status button,
+.auth-status__register {
+  color: var(--accent);
+}
+
+.auth-status button {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.auth-status button:hover,
+.auth-status button:focus-visible,
+.auth-status a:hover,
+.auth-status a:focus-visible {
+  color: var(--accent-dark);
+}
+
+.auth-status__loading {
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.auth-status__error {
+  color: var(--danger);
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+.auth-page,
+.account-page {
+  display: grid;
+  min-height: calc(100vh - 4.5rem);
+  padding: 4rem 0 6rem;
+  place-items: start center;
+}
+
+.auth-form,
+.account-panel {
+  width: min(100%, 31rem);
+  padding: clamp(1.5rem, 4vw, 2.5rem);
+  border: 1px solid var(--line);
+  border-radius: 1.25rem;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 1.25rem 3rem rgba(28, 48, 86, 0.08);
+}
+
+.auth-form__intro h1,
+.account-panel__intro h1 {
+  margin-bottom: 0.75rem;
+  font-size: clamp(2rem, 5vw, 3.3rem);
+  letter-spacing: -0.055em;
+  line-height: 1;
+}
+
+.auth-form__intro p:last-child,
+.account-panel__intro p:last-child {
+  margin-bottom: 0;
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+.auth-form__intro {
+  margin-bottom: 1.8rem;
+}
+
+.auth-field {
+  display: grid;
+  gap: 0.42rem;
+  margin-bottom: 1rem;
+  color: var(--foreground);
+  font-size: 0.88rem;
+  font-weight: 800;
+}
+
+.auth-field input {
+  width: 100%;
+  min-height: 3rem;
+  padding: 0.75rem 0.8rem;
+  border: 1px solid var(--line);
+  border-radius: 0.7rem;
+  background: var(--surface);
+  color: var(--foreground);
+}
+
+.auth-field input:focus {
+  outline: 2px solid #a9c2ff;
+  outline-offset: 1px;
+  border-color: var(--accent);
+}
+
+.auth-field input[aria-invalid="true"] {
+  border-color: var(--danger);
+}
+
+.auth-field small {
+  color: var(--danger);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.auth-field .auth-field__hint {
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.auth-form__summary {
+  margin-bottom: 1.2rem;
+  padding: 0.8rem 0.9rem;
+  border: 1px solid #f0c5c0;
+  border-radius: 0.7rem;
+  background: #fff5f3;
+  color: var(--danger);
+  font-size: 0.84rem;
+  line-height: 1.45;
+}
+
+.auth-form__submit {
+  width: 100%;
+  margin-top: 0.5rem;
+}
+
+.auth-form__switch {
+  margin: 1.25rem 0 0;
+  color: var(--muted);
+  font-size: 0.86rem;
+  text-align: center;
+}
+
+.auth-form__switch a {
+  color: var(--accent);
+  font-weight: 800;
+}
+
+.account-panel {
+  width: min(100%, 45rem);
+}
+
+.account-panel__intro {
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.account-details {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  margin: 0;
+  padding: 1.5rem 0;
+}
+
+.account-details div {
+  padding: 1rem;
+  border-radius: 0.85rem;
+  background: var(--surface-muted);
+}
+
+.account-details dt {
+  margin-bottom: 0.35rem;
+  color: var(--muted);
+  font-size: 0.74rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.account-details dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+  font-weight: 700;
+}
+
+.account-panel__logout {
+  border-color: var(--line);
+  background: var(--surface);
+  color: var(--foreground);
+  cursor: pointer;
+}
+
+.account-panel__logout:hover,
+.account-panel__logout:focus-visible {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.account-panel__status,
+.account-panel__error {
+  margin: 2rem 0;
+  color: var(--muted);
+}
+
+.account-panel__error {
+  color: var(--danger);
+}
+
+@media (max-width: 680px) {
+  .site-nav {
+    gap: 0.75rem;
+  }
+
+  .auth-status {
+    gap: 0.5rem;
+  }
+
+  .auth-status__identity,
+  .auth-status__error {
+    display: none;
+  }
+
+  .auth-page,
+  .account-page {
+    padding: 2rem 0 5rem;
+  }
+
+  .auth-form,
+  .account-panel {
+    padding: 1.25rem;
+  }
+
+  .account-details {
+    grid-template-columns: 1fr;
+  }
+}
+
 .sr-only {
   position: absolute;
   width: 1px;

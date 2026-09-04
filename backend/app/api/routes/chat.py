@@ -2,7 +2,9 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.agent.llm import LLMConfigurationError
+from app.auth.dependencies import get_optional_current_user
 from app.db.session import get_db
+from app.models import User
 from app.schemas.chat import ChatProduct, ChatRequest, ChatResponse
 from app.services.chat import (
     ChatHistoryError,
@@ -24,6 +26,7 @@ router = APIRouter()
 @router.post("", response_model=ChatResponse, summary="Send a message to Gemini")
 async def create_chat_message(
     payload: ChatRequest,
+    current_user: User | None = Depends(get_optional_current_user),
     session: AsyncSession = Depends(get_db),
 ) -> ChatResponse:
     try:
@@ -31,6 +34,7 @@ async def create_chat_message(
             session=session,
             message=payload.message,
             conversation_id=payload.conversation_id,
+            user_id=current_user.id if current_user is not None else None,
         )
     except ConversationNotFoundError as exc:
         raise HTTPException(

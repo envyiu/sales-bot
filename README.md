@@ -125,3 +125,27 @@ docker compose down -v
 ```
 
 The `.env` file is ignored by Git. Do not commit real credentials or secrets.
+
+## Authentication and sessions
+
+The storefront provides `/register`, `/login`, and `/account`. Authentication uses
+email and password with Argon2id hashes; passwords are never stored. FastAPI creates
+opaque 256-bit session tokens and stores only their SHA-256 hashes in
+`auth_sessions`. The trusted Next.js BFF keeps the raw token in the
+`sales_bot_session` HttpOnly, SameSite=Lax cookie. Sessions last 24 hours by
+default (`AUTH_SESSION_TTL_SECONDS=86400`); set `AUTH_COOKIE_SECURE=true` when
+serving the frontend over HTTPS.
+
+The backend auth endpoints are `POST /api/auth/register`, `POST /api/auth/login`,
+`POST /api/auth/logout`, and `GET /api/auth/me`. Browser code calls the same-origin
+Next.js BFF routes only. Registration and login are limited per client IP in the
+single frontend process (5 and 10 requests per minute); scaled deployments should
+move this limiter to shared storage such as Redis.
+
+Chat remains available anonymously. A new authenticated chat conversation stores
+its `user_id`; only that user can load it. Existing anonymous conversations remain
+unclaimed, and an old anonymous conversation is never automatically attached to an
+account. Auth/session and conversation authorization actions emit structured JSON
+security events, including login failures, session invalidation, logout, rate
+limits, and denied conversation access. Failed-login email values are represented
+by a SHA-256 pseudonymous fingerprint for correlation, not anonymization.

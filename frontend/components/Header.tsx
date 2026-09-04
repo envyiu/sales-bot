@@ -1,5 +1,7 @@
 import Link from "next/link";
 
+import AuthStatus from "@/components/AuthStatus";
+
 export default function Header() {
   return (
     <header className="site-header">
@@ -12,6 +14,7 @@ export default function Header() {
         </Link>
         <nav className="site-nav" aria-label="Main navigation">
           <Link href="/products">Products</Link>
+          <AuthStatus />
         </nav>
       </div>
     </header>

@@ -27,6 +27,7 @@ from app.agent.model_router import (
 from app.agent.prompts import SYSTEM_PROMPT
 from app.agent.tools import TOOLS
 from app.agent.tool_executor import ToolExecution, execute_tool
+from app.auth.telemetry import emit_auth_event
 from app.models import Conversation, Message, ToolCall
 
 
@@ -220,9 +221,23 @@ async def _invoke_llm(
 async def _load_history(
     session: AsyncSession,
     conversation_id: UUID,
+    user_id: UUID | None,
 ) -> list[BaseMessage]:
     conversation = await session.get(Conversation, conversation_id)
     if conversation is None:
+        raise ConversationNotFoundError("Conversation not found")
+    if conversation.user_id is not None and conversation.user_id != user_id:
+        emit_auth_event(
+            "authz_conversation_denied",
+            outcome="failure",
+            reason=(
+                "authentication_required"
+                if user_id is None
+                else "conversation_owner_mismatch"
+            ),
+            user_id=user_id,
+            conversation_id=conversation_id,
+        )
         raise ConversationNotFoundError("Conversation not found")
 
     result = await session.scalars(
@@ -247,10 +262,11 @@ async def _persist_successful_turn(
     conversation_id: UUID,
     conversation_exists: bool,
     new_messages: list[BaseMessage],
+    user_id: UUID | None,
 ) -> None:
     try:
         if not conversation_exists:
-            session.add(Conversation(id=conversation_id))
+            session.add(Conversation(id=conversation_id, user_id=user_id))
         else:
             await session.execute(
                 update(Conversation)
@@ -280,12 +296,13 @@ async def _persist_tool_execution(
     conversation_id: UUID,
     conversation_exists: bool,
     execution: ToolExecution,
+    user_id: UUID | None,
 ) -> None:
     """Commit telemetry independently so failed model turns remain observable."""
 
     try:
         if not conversation_exists:
-            session.add(Conversation(id=conversation_id))
+            session.add(Conversation(id=conversation_id, user_id=user_id))
         session.add(
             ToolCall(
                 conversation_id=conversation_id,
@@ -307,11 +324,12 @@ async def generate_chat_reply(
     session: AsyncSession,
     message: str,
     conversation_id: UUID | None = None,
+    user_id: UUID | None = None,
 ) -> ChatTurnResult:
     existing_conversation = conversation_id is not None
     target_conversation_id = conversation_id or uuid4()
     history = (
-        await _load_history(session, target_conversation_id)
+        await _load_history(session, target_conversation_id, user_id)
         if conversation_id is not None
         else []
     )
@@ -345,6 +363,7 @@ async def generate_chat_reply(
                 conversation_id=target_conversation_id,
                 conversation_exists=conversation_exists,
                 execution=execution,
+                user_id=user_id,
             )
             conversation_exists = True
             tool_message = execution.to_message()
@@ -363,6 +382,7 @@ async def generate_chat_reply(
         conversation_id=target_conversation_id,
         conversation_exists=conversation_exists,
         new_messages=new_messages,
+        user_id=user_id,
     )
     return ChatTurnResult(
         conversation_id=target_conversation_id,
